@@ -1,187 +1,316 @@
-class KnightNode
+require './board.rb'
+require './Node.rb'
 
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
+class Knight
 
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,2], [2,1], [-1,2], [-2,1],
-            [1,-2], [2,-1], [-1,-2], [-2,-1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
-        }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
+    def knight_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = KnightNode.new(start)
+        
+        queue = []
 
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << KnightNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+                path << current.parent.location
+                current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        true_path
+      #  board = Board.new
+
+      #  true_path.each {|n| 
+      #      board.knight_move_pos(n) 
+      #  }
+      #  board.display
+    end   
 end
 
-class BishopNode
+class Bishop
 
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
-
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,-1],[1,1],
-            [-1,-1],[-1,1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
+    def bishop_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = BishopNode.new(start)
+           
+        queue = []
+   
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << BishopNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+  
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+            path << current.parent.location
+            current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        puts true_path.inspect
+        true_path
+        board = Board.new
+ 
+        true_path.each {|n| 
+            board.bishop_move_pos(n) 
         }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
-
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
+        board.display
+    end   
 end
 
-class RookNode
+class Rook
 
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
-
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,0],[-1,0],
-            [0,-1],[0,1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
+    def rook_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = RookNode.new(start)
+           
+        queue = []
+   
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << RookNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+  
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+            path << current.parent.location
+            current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        puts true_path.inspect
+        true_path
+        board = Board.new
+ 
+        true_path.each {|n| 
+            board.rook_move_pos(n) 
         }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
+        board.display
+    end   
+end 
 
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
-end
+class Pawn
 
-class QueenNode
+    def pawn_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = PawnNode.new(start)
+           
+        queue = []
+   
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << PawnNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+  
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+            path << current.parent.location
+            current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        true_path
+        #board = Board.new
+ 
+        #true_path.each {|n| 
+        #    board.pawn_move_pos(n) 
+        #}
+        #board.display
+    end   
+end 
 
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
+class Queen
 
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,0],[-1,0],[1,-1],[1,1],
-            [0,-1],[0,1],[-1,-1],[-1,1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
+    def queen_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = QueenNode.new(start)
+           
+        queue = []
+   
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << QueenNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+  
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+            path << current.parent.location
+            current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        puts true_path.inspect
+        true_path
+        board = Board.new
+ 
+        true_path.each {|n| 
+            board.queen_move_pos(n) 
         }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
+        board.display
+    end   
+end 
 
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
-end
+class King
 
-class KingNode
-
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
-
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,0],[-1,0],[1,-1],[1,1],
-            [0,-1],[0,1],[-1,-1],[-1,1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
+    def king_path(start,target)
+        # the starting point is inserted into the Knightnode
+        # it creates all the possible moves 
+        current = KingNode.new(start)
+           
+        queue = []
+   
+        # checks if the starting point has moved toward target
+        # this is checking breath first
+        # checking all the each layer of moves
+        # then moving to the next 
+        until current.location == target
+            current.possible_moves.each {|move| queue << KingNode.new(move, current)}
+            current = queue.shift
+        end
+        # documents the path thats being taken to get to 
+        # the target
+        path = [current.location]
+  
+        # checks all parents of the target to trace
+        # back to the tarting point
+        # puts into the path array to document it
+        until current.location == start
+            path << current.parent.location
+            current = current.parent
+        end
+        # reversing path array so its in 
+        # chronological order meaning start to end
+        true_path = path.reverse
+        puts true_path.inspect
+        true_path
+        board = Board.new
+ 
+        true_path.each {|n| 
+            board.king_move_pos(n) 
         }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
+        board.display
+    end   
+end 
 
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
-end
+# put restrictions on the pieces 
+    # knight is fine
 
-class PawnNode
+# must keep track of how many moves made for pawn 
+    # 0 moves made allows for 2 on path
+    # else only 1 
+    # have temporary addition row pawn 
+    # make temp - [1,-1],[1,1]
+# king only allowed one movement in path
+# queen has no restictions keep path the same
+# rook has no restrictions keep path the same
+# bishop has no restrictions keep path the same
 
-    attr_accessor :location
-    attr_accessor :parent
-    attr_accessor :possible_moves
+=begin
+knight = KnightNode.new([0,0])
+puts "Knight possible moves: #{knight.possible_moves.inspect}"
+Knight.new.Knight_path([3,3], [1,8])
+bishop = BishopNode.new([0,0])
+puts "Bishop possible moves: #{bishop.possible_moves.inspect}"
+puts Bishop.new.Bishop_path([2,2], [7,1])
+puts Bishop.new.Bishop_path([2,2], [8,8])
+rook = RookNode.new([0,0])
+puts "Rook possible moves: #{rook.possible_moves.inspect}"
+puts Rook.new.Bishop_path([2,2], [2,8])
+=end
+pawn = PawnNode.new([0,0])
+puts "Pawn possible moves: #{pawn.possible_moves.inspect}"
+puts Pawn.new.pawn_path([7,1],[6,1]).inspect 
+Pawn.new.pawn_path([2,2],[8,2])
+=begin
+board = Board.new
+board.white_knight_pos([1,3])
+board.white_knight_pos([3,5])
+board.black_bishop_pos([4,6])
+=end
+#board.display
+=begin
+queen = QueenNode.new([0,0])
+puts "Queen possible moves: #{queen.possible_moves.inspect}"
+Queen.new.queen_path([2,2], [1,8])
+king = KingNode.new([0,0])
+puts "King possible moves: #{king.possible_moves.inspect}"
+King.new.king_path([2,2],[3,6])
+=end
 
-    def initialize(location = [0,0], parent = nil)
-        @location = location
-        @parent = parent
-        # notes the changes front start location
-        # i.e. one down, etc
-        @possible_moves = [ 
-            [1,0],[1,-1],[1,1]
-        ]
-        # adds location with moves to determine
-        # where the points are on the board 
-        @possible_moves =  @possible_moves.select {|move|
-            move[0] += location[0]
-            move[1] += location[1]
-        }
-        # possible moves are filterd to fit in
-        # 8 by 8 criteria for the board
-        @possible_moves = valid_moves(@possible_moves)
-    end
+white_king = "♔"
+white_queen = "♕"
+white_rook = "♖"
+white_bishop = "♗"
+white_knight = "♘"
+white_pawn = "♙"
+black_king = "♚"
+black_queen = "♛"
+black_rook = "♜"
+black_bishop = "♝"
+black_knight = "♞"
+black_pawn = "♟"
 
-    def valid_moves(moves)
-        moves.select {|each| each[0].between?(0,7) && each[1].between?(0,7)}
-    end
-end
+knight = "♞"
+knight.force_encoding('utf-8')
 
 =begin
 [5,6][1,2]        [6,3][2,-1]
