@@ -281,11 +281,29 @@ class Rules
          # will need to likely move this
          puts "Piece Positions" 
          puts 
+         puts "Bishop Positions:       wb1:#{@piece.position_wb1}, wb2:#{@piece.position_wb2} bb1:#{@piece.position_bb1}, bb2:#{@piece.position_bb2}"
+         puts "Rook Positions:       wr1:#{@piece.position_wr1}, wr2:#{@piece.position_wr2} br1:#{@piece.position_br1}, br2:#{@piece.position_br2}"
          puts "Knight Positions:     bn1:#{@piece.position_bn1}, bn2:#{@piece.position_bn2} wn1:#{@piece.position_wn1}, wn2:#{@piece.position_wn2}"  
          puts "White Pawn Positions: wp1:#{@piece.position_wp1}, wp2:#{@piece.position_wp2} wp3:#{@piece.position_wp3}, wp4:#{@piece.position_wp4}, wp5:#{@piece.position_wp5}, wp6:#{@piece.position_wp6}, wp7:#{@piece.position_wp7}, wp8:#{@piece.position_wp8}"  
          puts "Black Pawn Positions: bp1:#{@piece.position_bp1}, bp2:#{@piece.position_bp2} bp3:#{@piece.position_bp3}, bp4:#{@piece.position_bp4}, bp5:#{@piece.position_bp5}, bp6:#{@piece.position_bp6}, bp7:#{@piece.position_bp7}, bp8:#{@piece.position_bp8}"  
+         puts "KINGS:                wk:#{@piece.position_wk}, bk:#{@piece.position_bk}"
          puts 
          puts "Total game turns: #{@turns += 1}"
+    end
+
+    def check?(node, target)
+
+        possible_moves = node.new(target).possible_moves
+        possible_moves.each_with_index {|piece, index|
+            
+            return true if piece == @piece.position_bk 
+            return true if piece == @piece.position_wk
+            return false if index == possible_moves.length-1
+        }
+    end
+
+    def check_mate?
+        @piece.dead_piece_name.any?("bk") || @piece.dead_piece_name.any?("wk")
     end
 
     def pawn_choice(choice, target)
@@ -414,7 +432,7 @@ class Rules
                     #check if white is in the position
                     if white_position_check(target[-1])
                   
-                        invalid_entry(KnightNode, @current)
+                        invalid_white_pawn(PawnNode, @current)
                         puts "===================="
                         puts "#{target[-1]} is taken: White piece can't overtake a white piece"
                         puts "===================="
@@ -441,15 +459,38 @@ class Rules
                         # displaying the current piece
                         target_display(@current)
 
-                        # tell the user the dead piece
-                        puts "==========================="
-                        puts "Knight #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
-                        puts "==========================="     
-                
+                        # if theres a check
+                        if check?(PawnNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts "Knight #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
                     #if target is black and infront = no
                     elsif black_position_check(target[-1]) && (@current[0] - move[0] != -1) && (@current[1] - move[1] != 0)
                         pawn_choice(choice, target)
                         target_display(@current)
+
+                        # if theres a check
+                        if check?(PawnNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
                     
                     # if target is not black or white AND not diagonal
                     elsif !black_position_check(target[-1]) && !white_position_check(target[-1]) && (@current[1] - move[1] != 1) && (@current[1] - move[1] != -1)
@@ -461,18 +502,80 @@ class Rules
                         puts "1: Theres a black or white piece ahead of you"
                         puts "2: Pawn cannot move diagonally unless to kill"
                         puts "===================="
-                        puts "CURRENT #{@current}"
-                        puts "TARGET #{target}"
-                        puts "MOVE #{move}"
                     end 
                 #black 
                 elsif !(@current[0] - move[0] == -1) && (choice == "bp1" && !@piece.dead_piece_name.any?("bp1") || choice == "bp2" && !@piece.dead_piece_name.any?("bp2") || choice == "bp3" && !@piece.dead_piece_name.any?("bp3") || choice == "bp4" && !@piece.dead_piece_name.any?("bp4") || choice == "bp5" && !@piece.dead_piece_name.any?("bp5") || choice == "bp6" && !@piece.dead_piece_name.any?("bp6") || choice == "bp7" && !@piece.dead_piece_name.any?("bp7") || choice == "bp8" && !@piece.dead_piece_name.any?("bp8")) 
+                    #check if black is in the position
                     if black_position_check(target[-1])
-                        @board.display 
+
+                        invalid_black_pawn(PawnNode, @current)
+                        puts "===================="
                         puts "#{target[-1]} is taken: Black piece can't overtake a black piece"
-                    else
+                        puts "===================="
+                    # check if white piece is in the position and its not infront then death
+                    elsif white_position_check(target[-1]) && ((@current[0] - move[0] == 1) && (@current[1] - move[1] == 1) || (@current[1] - move[1] == -1))
+                        
+                        # the black piece is dead right away
+                        @white_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        pawn_choice(choice, target)  
+
+                        # displaying the current piece
+                        target_display(@current)
+                        
+                        # if theres a check
+                        if check?(PawnNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+                    #if target is white and infront = no
+                    elsif white_position_check(target[-1]) && (@current[0] - move[0] != 1) && (@current[1] - move[1] != 0)
                         pawn_choice(choice, target)
                         target_display(@current)
+                    
+                    elsif !black_position_check(target[-1]) && !white_position_check(target[-1]) && (@current[1] - move[1] != -1) && (@current[1] - move[1] != 1)
+                        pawn_choice(choice, target)
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(PawnNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+                    else 
+                        invalid_black_pawn(PawnNode, @current)
+                        puts "===================="
+                        puts "1: Theres a black or white piece ahead of you"
+                        puts "2: Pawn cannot move diagonally unless to kill"
+                        puts "===================="
                     end
                 else 
                     invalid_entry(PawnNode, @current)
@@ -487,18 +590,24 @@ class Rules
                 if choice == "wp1" && !@piece.dead_piece_name.any?("wp1") || choice == "wp2" && !@piece.dead_piece_name.any?("wp2")|| choice == "wp3" && !@piece.dead_piece_name.any?("wp3") || choice == "wp4" && !@piece.dead_piece_name.any?("wp4") || choice == "wp5" && !@piece.dead_piece_name.any?("wp5") || choice == "wp6" && !@piece.dead_piece_name.any?("wp6") || choice == "wp7" && !@piece.dead_piece_name.any?("wp7") || choice == "wp8" && !@piece.dead_piece_name.any?("wp8")
                     #if theres black in the position
                     # can't go forth and vise-versa
-                    if white_position_check(target[-1])
+                    if white_position_check(target[-1]) || black_position_check(target[-1])
                         @board.display 
-                        puts "#{target[-1]} is taken: White piece can't overtake a white piece"
+                        puts "=================="
+                        puts "#{target[-1]} is taken: White pawn can't overtake the space"
+                        puts " Pawns kill diagonally!"
+                        puts "=================="
                     else
                         pawn_choice(choice, target)
                         target_display(@current)
                     end
                 #black
                 elsif choice == "bp1" && !@piece.dead_piece_name.any?("bp1") || choice == "bp2" && !@piece.dead_piece_name.any?("bp2") || choice == "bp3" && !@piece.dead_piece_name.any?("bp3") || choice == "bp4" && !@piece.dead_piece_name.any?("bp4") || choice == "bp5" && !@piece.dead_piece_name.any?("bp5") || choice == "bp6" && !@piece.dead_piece_name.any?("bp6") || choice == "bp7" && !@piece.dead_piece_name.any?("bp7") || choice == "bp8" && !@piece.dead_piece_name.any?("bp8")
-                    if black_position_check(target[-1])
+                    if black_position_check(target[-1]) || white_position_check(target[-1])
                         @board.display 
-                        puts "#{target[-1]} is taken: Black piece can't overtake a black piece"
+                        puts "=================="
+                        puts "#{target[-1]} is taken: Black pawn can't overtake the space"
+                        puts " Pawns kill diagonally!"
+                        puts "=================="
                     else
                         pawn_choice(choice, target)
                         target_display(@current)
@@ -573,17 +682,40 @@ class Rules
                         # displaying the current piece
                         target_display(@current)
 
-                        # tell the user the dead piece
-                        puts "==========================="
-                        puts "Knight #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
-                        puts "==========================="     
-                    
+                        # if theres a check
+                        if check?(KnightNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
                     # when the location is empty    
                     else
                         if choice == "wn1"
                             @piece.position_wn1 = target[-1]
                         elsif choice == "wn2"
                             @piece.position_wn2 = target[-1]
+                        end
+
+                        # if theres a check
+                        if check?(KnightNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
                         end
 
                         # displaying the current piece
@@ -596,7 +728,7 @@ class Rules
                 
                         invalid_entry(KnightNode, @current)
                         puts "===================="
-                        puts "#{target[-1]} is taken: Black piece can't overtake a black piece"
+                        puts "#{target[-1]} is taken: Black piece can't overtake the piece"
                         puts "===================="
 
                     # check if white piece is in the position
@@ -625,18 +757,41 @@ class Rules
                         # displaying the current piece
                         target_display(@current)
 
-                        # tell the user the dead piece
-                        puts "==========================="
-                        puts "Knight #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
-                        puts "==========================="     
-                    
+                        # if theres a check
+                        if check?(KnightNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
                     # when the location is empty    
                     else
                         if choice == "bn1" 
                             @piece.position_bn1 = target[-1]
                         elsif choice == "bn2"
                             @piece.position_bn2 = target[-1]
-                        end         
+                        end        
+                        
+                        # if theres a check
+                        if check?(KnightNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
 
                         # displaying the current piece
                         target_display(@current)
@@ -646,30 +801,702 @@ class Rules
         end
     end
 
-    # identify each piece on the board 
-    # each should have its own Knight, etc piece, 
-    # with its starting and end positions
-    # should switch the end position to the start 
-    # when new move is made to determine new possible moves
-    # should initialize the figures to keep it cleaner DRY
-    # location should have end of path in it
-    # to show end location
-    # examine path for restrictions 
+    def king_move(choice, move)
 
-    # must have even when pieces cross on the board? 
-    # maybe? might need to be on the game class 
-    def display
-        @board.display
+        # choice of king
+        if choice == "bk" && !@piece.dead_piece_name.any?("bk")
+            @current = @piece.position_bk
+        elsif choice == "wk" && !@piece.dead_piece_name.any?("wk")
+            @current = @piece.position_wk
+        else 
+            puts "Sorry #{choice} is dead or Invalid entry!"
+        end
+        
+        if move.length != 2 || !move[0].is_a?(Integer) ||!move[1].is_a?(Integer) || !move[0].between?(1,8) || !move[0].between?(1,8)
+            puts 
+            puts "=============================================="
+            raise "Invalid Move: Must be number between 1 and 8"
+            puts "=============================================="
+        else        
+            target = King.new.king_path(@current, move)
+        
+            # checking whether the use picks one move
+            if target.length > 2
+
+                invalid_entry(KingNode, @current)
+            elsif target.length == 2
+                if choice == "wk" && !@piece.dead_piece_name.any?("wk")
+                    #checks  if white is in the position
+                    if white_position_check(target[-1])
+                        
+                        invalid_entry(KingNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: White piece can't overtake a white piece"
+                        puts "===================="
+
+                    # check if black piece is in the position
+                    elsif black_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @black_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "wk"
+                            @piece.position_wk = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(KingNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="   
+                        end  
+                    
+                    # when the location is empty    
+                    else
+                        if choice == "wk"
+                            @piece.position_wk = target[-1]
+                        end
+                        
+                        # if theres a check
+                        if check?(KingNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                #black
+                elsif choice == "bk" && !@piece.dead_piece_name.any?("bk")
+                    # check if black piece is in the position
+                    if black_position_check(target[-1])
+                
+                        invalid_entry(KingNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: Black piece can't overtake the piece"
+                        puts "===================="
+
+                    # check if white piece is in the position
+                    elsif white_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @white_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "bk"
+                            @piece.position_bk = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(KingNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+                    # when the location is empty    
+                    else
+                        if choice == "bk" 
+                            @piece.position_bk = target[-1]
+                        end         
+
+                        # if theres a check
+                        if check?(KingNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                end
+            end
+        end
     end
-    def white_positions
-        @white_pieces
+
+    def rook_move(choice, move)
+
+        # choice of knight
+        if choice == "wr1" && !@piece.dead_piece_name.any?("wr1")
+            @current = @piece.position_wr1
+        elsif choice == "wr2" && !@piece.dead_piece_name.any?("wr2")
+            @current = @piece.position_wr2
+        elsif choice == "br1" && !@piece.dead_piece_name.any?("br1")
+            @current = @piece.position_br1
+        elsif choice == "br2" && !@piece.dead_piece_name.any?("br2")
+            @current = @piece.position_br2
+        else 
+            puts "Sorry #{choice} is dead or Invalid entry!"
+        end
+        
+        if move.length != 2 || !move[0].is_a?(Integer) ||!move[1].is_a?(Integer) || !move[0].between?(1,8) || !move[0].between?(1,8)
+            puts 
+            puts "=============================================="
+            raise "Invalid Move: Must be number between 1 and 8"
+            puts "=============================================="
+        else        
+            target = Rook.new.rook_path(@current, move)
+        
+            # checking whether the use picks one or more move
+            if target.length >= 2
+                if choice == "wr1" && !@piece.dead_piece_name.any?("wr1") || choice == "wr2" && !@piece.dead_piece_name.any?("wr2") &&( @current[1] - move[1] == 0 || @current[0] - move[0] == 0)
+                    #checks  if white is in the position
+                    if white_position_check(target[-1])
+                        
+                        invalid_entry(RookNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: White piece can't overtake a white piece"
+                        puts "===================="
+
+                    # check if black piece is in the position
+                    elsif black_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @black_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "wr1"
+                            @piece.position_wr1 = target[-1]
+                        elsif choice == "wr2"
+                            @piece.position_wr2 = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(RookNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
+                    # when the location is empty    
+                    else
+                        if choice == "wr1"
+                            @piece.position_wr1 = target[-1]
+                        elsif choice == "wr2"
+                            @piece.position_wr2 = target[-1]
+                        end
+
+                        # if theres a check
+                        if check?(RookNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                #black
+                elsif choice == "br1" && !@piece.dead_piece_name.any?("br1")|| choice == "br2" && !@piece.dead_piece_name.any?("br1") &&( @current[1] - move[1] == 0 || @current[0] - move[0] == 0)
+                    # check if black piece is in the position
+                    if black_position_check(target[-1])
+                
+                        invalid_entry(RookNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: Black piece can't overtake the piece"
+                        puts "===================="
+
+                    # check if white piece is in the position
+                    elsif white_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @white_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "br1"
+                            @piece.position_br1 = target[-1]
+                        elsif choice == "br2"
+                            @piece.position_br2 = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(RookNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
+                    # when the location is empty    
+                    else
+                        if choice == "br1" 
+                            @piece.position_br1 = target[-1]
+                        elsif choice == "br2"
+                            @piece.position_br2 = target[-1]
+                        end        
+                        
+                        # if theres a check
+                        if check?(RookNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                else
+                    invalid_entry(RookNode, @current)
+                end
+            end
+        end
     end
-    def black_positions
-        @black_pieces
+    
+    def bishop_move(choice, move)
+
+        # choice of knight
+        if choice == "wb1" && !@piece.dead_piece_name.any?("wb1")
+            @current = @piece.position_wb1
+        elsif choice == "wb2" && !@piece.dead_piece_name.any?("wb2")
+            @current = @piece.position_wb2
+        elsif choice == "bb1" && !@piece.dead_piece_name.any?("bb1")
+            @current = @piece.position_bb1
+        elsif choice == "bb2" && !@piece.dead_piece_name.any?("bb2")
+            @current = @piece.position_bb2
+        else 
+            puts "Sorry #{choice} is dead or Invalid entry!"
+        end
+        
+        if move.length != 2 || !move[0].is_a?(Integer) ||!move[1].is_a?(Integer) || !move[0].between?(1,8) || !move[0].between?(1,8)
+            puts 
+            puts "=============================================="
+            raise "Invalid Move: Must be number between 1 and 8"
+            puts "=============================================="
+        else        
+            target = Bishop.new.bishop_path(@current, move)
+        
+            # checking whether the use picks one or more move
+            if target.length >= 2
+                if choice == "wb1" && !@piece.dead_piece_name.any?("wb1") || choice == "wb2" && !@piece.dead_piece_name.any?("wb2") && !( @current[1] - move[1] == 0 || @current[0] - move[0] == 0)
+                    #checks  if white is in the position
+                    if white_position_check(target[-1])
+                        
+                        invalid_entry(RookNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: White piece can't overtake a white piece"
+                        puts "===================="
+
+                    # check if black piece is in the position
+                    elsif black_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @black_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "wb1"
+                            @piece.position_wb1 = target[-1]
+                        elsif choice == "wb2"
+                            @piece.position_wb2 = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(BishopNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
+                    # when the location is empty    
+                    else
+                        if choice == "wb1"
+                            @piece.position_wb1 = target[-1]
+                        elsif choice == "wb2"
+                            @piece.position_wb2 = target[-1]
+                        end
+
+                        # if theres a check
+                        if check?(BishopNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                #black
+                elsif choice == "bb1" && !@piece.dead_piece_name.any?("bb1")|| choice == "bb2" && !@piece.dead_piece_name.any?("bb1") && !( @current[1] - move[1] != 0 || @current[0] - move[0] != 0)
+                    # check if black piece is in the position
+                    if black_position_check(target[-1])
+                
+                        invalid_entry(RookNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: Black piece can't overtake the piece"
+                        puts "===================="
+
+                    # check if white piece is in the position
+                    elsif white_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @white_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "bb1"
+                            @piece.position_bb1 = target[-1]
+                        elsif choice == "bb2"
+                            @piece.position_bb2 = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(BishopNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+
+                    # when the location is empty    
+                    else
+                        if choice == "bb1" 
+                            @piece.position_bb1 = target[-1]
+                        elsif choice == "bb2"
+                            @piece.position_bb2 = target[-1]
+                        end        
+                        
+                        # if theres a check
+                        if check?(BishopNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                else
+                    invalid_entry(BishopNode, @current)
+                end
+            end
+        end
     end
-    def dead_pieces
-        puts"dead locations: #{@piece.dead_location}"
-        "dead names: #{@piece.dead_piece_name}" 
+
+    def queen_move(choice, move)
+
+        # choice of king
+        if choice == "bq" && !@piece.dead_piece_name.any?("bq")
+            @current = @piece.position_bq
+        elsif choice == "wq" && !@piece.dead_piece_name.any?("wq")
+            @current = @piece.position_wq
+        else 
+            puts "Sorry #{choice} is dead or Invalid entry!"
+        end
+        
+        if move.length != 2 || !move[0].is_a?(Integer) ||!move[1].is_a?(Integer) || !move[0].between?(1,8) || !move[0].between?(1,8) 
+            puts 
+            puts "=============================================="
+            raise "Invalid Move: Must be number between 1 and 8"
+            puts "=============================================="
+        else        
+            target = Queen.new.queen_path(@current, move)
+            # checking whether the use picks one move
+            if target.length >= 2
+                if choice == "wq" && !@piece.dead_piece_name.any?("wq") && !( @current[1] - move[1] != 0 || @current[0] - move[0] != 0) &&( @current[1] - move[1] == 0 || @current[0] - move[0] == 0)
+                    #checks  if white is in the position
+                    if white_position_check(target[-1])
+                        
+                        invalid_entry(QueenNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: White piece can't overtake a white piece"
+                        puts "===================="
+
+                    # check if black piece is in the position
+                    elsif black_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @black_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "wq"
+                            @piece.position_wq = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(QueenNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="   
+                        end  
+                    
+                    # when the location is empty    
+                    else
+                        if choice == "wq"
+                            @piece.position_wq = target[-1]
+                        end
+                        
+                        # if theres a check
+                        if check?(QueenNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                #black
+                elsif choice == "bq" && !@piece.dead_piece_name.any?("bq") && !( @current[1] - move[1] != 0 || @current[0] - move[0] != 0) &&( @current[1] - move[1] == 0 || @current[0] - move[0] == 0)
+                    # check if black piece is in the position
+                    if black_position_check(target[-1])
+                
+                        invalid_entry(QueenNode, @current)
+                        puts "===================="
+                        puts "#{target[-1]} is taken: Black piece can't overtake the piece"
+                        puts "===================="
+
+                    # check if white piece is in the position
+                    elsif white_position_check(target[-1])
+                        
+                        # the white piece is dead right away
+                        @white_pieces.each {|location|
+
+                            if location[1] == target[-1]
+                                # marking it as dead 
+                                # so its skipped when initiating
+                                @piece.dead_location << location[1]
+
+                                # putting the name so users can't pick it again
+                                @piece.dead_piece_name << location[0]
+                            end
+                        }
+
+                        # assigning the the location 
+                        if choice == "bq"
+                            @piece.position_bq = target[-1]
+                        end    
+
+                        # displaying the current piece
+                        target_display(@current)
+
+                        # if theres a check
+                        if check?(QueenNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # if theres a checkmate
+                        if check_mate?
+                            
+                            puts "**********************************"
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "     CHECKMATE!! \n     GAME OVER!"
+                            puts "**********************************"
+                        else
+                            # tell the user the dead piece
+                            puts "==========================="
+                            puts " #{@piece.dead_piece_name[-1]} at #{target[-1]} is dead!"
+                            puts "==========================="     
+                        end
+                    # when the location is empty    
+                    else
+                        if choice == "bq" 
+                            @piece.position_bq = target[-1]
+                        end         
+
+                        # if theres a check
+                        if check?(QueenNode, target[-1])
+                            puts "*****************************************"
+                            puts "              CHECK"
+                            puts "*****************************************"
+                        end
+
+                        # displaying the current piece
+                        target_display(@current)
+                    end
+                end
+            else
+                invalid_entry(QueenNode, @current)
+            end
+        end
     end
 end
 
@@ -689,7 +1516,7 @@ game.initiate
 #game.knight_move("bn1", [6,1])
 #game.knight_move("bn1", [5,3])
 #game.knight_move("bn1", [4,1])
-#game.knight_move("wn1", [3,3])
+game.knight_move("wn1", [3,3])
 #game.knight_move("wn1", [4,1])
 #game.knight_move('wn1', [5,3])
 #game.knight_move('bn1', [5,3])
@@ -697,13 +1524,34 @@ game.initiate
 #game.knight_move('bn1', [7,4])
 #game.pawn_move("bp1", [5,1])
 #game.pawn_move("bp1", [6,1])
-game.pawn_move("bp2", [5,2])
-#game.pawn_move("wp2", [4,2])
-game.pawn_move("bp2", [4,2])
-game.pawn_move("wp2", [4,2])
-#game.pawn_move("bp2", [3,2])
+game.pawn_move("wp5", [4,5])
+#game.pawn_move("wp2", [5,2])
+game.knight_move("wn1", [5,2])
+game.pawn_move("bp2", [6,2])
+#game.knight_move("wn1", [7,3])
+game.king_move("wk", [2,5])
+game.king_move("wk", [3,5])
+game.king_move("wk", [4,6])
+game.king_move("wk", [5,5])
+game.king_move("wk", [6,5])
+game.king_move("wk", [6,7])
+game.pawn_move("wp8", [4,8])
+game.rook_move("wr2", [3,8])
+game.rook_move("wr2", [3,1])
+game.bishop_move("wb2",[3,6])
+game.queen_move("wq",[3,2])
+game.rook_move("wr1", [1,5])
 
-#game.pawn_move("wp1",[6,1])
+puts target = Bishop.new.bishop_path([1,6],[3,6])
+
+#game.king_move("wk", [7,5])
+#game.king_move("wk", [8,5])
+
+#game.pawn_move("bp4",[6,5])
+
+
+# CHESS PIECE IS GOING THROUGH OTHER PIECES IF ITS EMPTY! 
+
 
 #game.knight_move('bn1', [])
 

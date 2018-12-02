@@ -75,12 +75,12 @@ class Bishop
         true_path = path.reverse
         puts true_path.inspect
         true_path
-        board = Board.new
+        #board = Board.new
  
-        true_path.each {|n| 
-            board.bishop_move_pos(n) 
-        }
-        board.display
+#        true_path.each {|n| 
+ #          board.white_bishop_pos(n) 
+  #      }
+   #     board.display
     end   
 end
 
@@ -117,12 +117,12 @@ class Rook
         true_path = path.reverse
         puts true_path.inspect
         true_path
-        board = Board.new
+        #board = Board.new
  
-        true_path.each {|n| 
-            board.rook_move_pos(n) 
-        }
-        board.display
+        #true_path.each {|n| 
+        #    board.rook_move_pos(n) 
+        #}
+        #board.display
     end   
 end 
 
@@ -200,12 +200,12 @@ class Queen
         true_path = path.reverse
         puts true_path.inspect
         true_path
-        board = Board.new
+        #board = Board.new
  
-        true_path.each {|n| 
-            board.queen_move_pos(n) 
-        }
-        board.display
+        #true_path.each {|n| 
+        #    board.queen_move_pos(n) 
+        #}
+        #board.display
     end   
 end 
 
@@ -242,12 +242,12 @@ class King
         true_path = path.reverse
         puts true_path.inspect
         true_path
-        board = Board.new
+        #board = Board.new
  
-        true_path.each {|n| 
-            board.king_move_pos(n) 
-        }
-        board.display
+        #true_path.each {|n| 
+        #    board.white_king_pos(n) 
+        #}
+        #board.display
     end   
 end 
 
@@ -268,29 +268,34 @@ end
 knight = KnightNode.new([0,0])
 puts "Knight possible moves: #{knight.possible_moves.inspect}"
 Knight.new.Knight_path([3,3], [1,8])
+=end
+=begin
 bishop = BishopNode.new([0,0])
 puts "Bishop possible moves: #{bishop.possible_moves.inspect}"
-puts Bishop.new.Bishop_path([2,2], [7,1])
-puts Bishop.new.Bishop_path([2,2], [8,8])
+puts Bishop.new.bishop_path([2,2], [7,1])
+puts Bishop.new.bishop_path([2,2], [8,8])
+=begin
 rook = RookNode.new([0,0])
 puts "Rook possible moves: #{rook.possible_moves.inspect}"
 puts Rook.new.Bishop_path([2,2], [2,8])
 =end
+=begin
 pawn = PawnNode.new([0,0])
 puts "Pawn possible moves: #{pawn.possible_moves.inspect}"
 puts Pawn.new.pawn_path([7,1],[6,1]).inspect 
 Pawn.new.pawn_path([2,2],[8,2])
-=begin
+
 board = Board.new
 board.white_knight_pos([1,3])
 board.white_knight_pos([3,5])
 board.black_bishop_pos([4,6])
-=end
+
 #board.display
-=begin
+
 queen = QueenNode.new([0,0])
 puts "Queen possible moves: #{queen.possible_moves.inspect}"
 Queen.new.queen_path([2,2], [1,8])
+
 king = KingNode.new([0,0])
 puts "King possible moves: #{king.possible_moves.inspect}"
 King.new.king_path([2,2],[3,6])
@@ -329,3 +334,5 @@ knight.force_encoding('utf-8')
 [1,0][1,1][1,2][1,3][1,4][1,5][1,6][1,7]
 [0,0][0,1][0,2][0,3][0,4][0,5][0,6][0,7]
 =end
+
+

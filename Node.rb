@@ -181,7 +181,7 @@ class PawnNode
         # notes the changes front start location
         # i.e. one down, etc
         @possible_moves = [ 
-            [1,0], [-1,0], [1,-1], [1,1]
+            [1,0], [-1,0], [1,-1], [1,1], [-1,-1], [-1,1]
         ]
         
         # adds location with moves to determine
